@@ -80,7 +80,35 @@
       </div>
       <div class="campo">
         <label>Describe el problema *</label>
-        <textarea id="descripcion" placeholder="Cuéntanos qué está pasando con el mayor detalle posible..."></textarea>
+        <div class="textarea-wrapper">
+          <textarea id="descripcion" placeholder="Cuéntanos qué está pasando... o usa el micrófono"></textarea>
+          <button class="btn-mic" id="btn-mic" onclick="toggleVoz()" title="Dictar por voz">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
+          </button>
+        </div>
+        <div id="voz-status" class="voz-status hidden">
+          <span class="voz-dot"></span> Escuchando... habla ahora
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Foto de la incidencia (opcional)</label>
+        <div class="foto-area" id="foto-area" onclick="abrirCamara()">
+          <div id="foto-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A3A6B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span>Toca para hacer una foto</span>
+          </div>
+          <img id="foto-preview" class="hidden" alt="Foto de la incidencia">
+          <button id="btn-borrar-foto" class="btn-borrar-foto hidden" onclick="borrarFoto(event)">&#x2715; Borrar foto</button>
+        </div>
+        <input type="file" id="input-camara" accept="image/*" capture="environment" style="display:none" onchange="mostrarFoto(event)">
       </div>
 
       <button class="btn-ia" id="btn-ia" onclick="analizarIA()">
@@ -304,6 +332,7 @@
         <div class="queja-barrio">${q.barrio}</div>
         <div class="queja-texto">${q.descripcion}</div>
         <div class="queja-nombre">${q.nombre || 'Anónimo'}</div>
+        ${q.foto ? `<img src="${q.foto}" class="queja-foto" alt="Foto incidencia">` : ""}
         <span class="queja-estado estado-${q.estado}">${q.estado === 'nueva' ? 'Nueva' : q.estado === 'pleno' ? 'Para pleno' : 'Resuelta'}</span>
         ${q.estado === 'nueva' ? `
           <button class="btn-accion" onclick="generarPost('${q.id}','${q.barrio}','${q.categoria}',\`${q.descripcion.replace(/`/g,"'")}\`)">✦ Generar post Facebook</button>
@@ -339,13 +368,15 @@
       return;
     }
     try {
-      await addDoc(collection(db, "quejas"), {
+      const docData = {
         nombre: document.getElementById('nombre').value || 'Anónimo',
         barrio, categoria: cat, descripcion: desc,
         fechaTexto: new Date().toLocaleDateString('es-ES', {day:'numeric',month:'short',year:'numeric'}),
         fecha: new Date(),
         estado: 'nueva'
-      });
+      };
+      if (fotoBase64) docData.foto = fotoBase64;
+      await addDoc(collection(db, "quejas"), docData);
       document.getElementById('formulario').classList.add('hidden');
       document.getElementById('enviada-ok').classList.remove('hidden');
     } catch(e) {
@@ -463,6 +494,101 @@ Responde SOLO con este JSON exacto, sin texto adicional:
 
   window.cerrarModal = function() {
     document.getElementById('modal-post').classList.add('hidden');
+  }
+
+
+  // ══════════════════════════════════════════
+  // VOZ — RECONOCIMIENTO DE VOZ
+  // ══════════════════════════════════════════
+  let reconocimiento = null;
+  let grabando = false;
+
+  window.toggleVoz = function() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome en Android.');
+      return;
+    }
+    if (grabando) {
+      reconocimiento.stop();
+      return;
+    }
+    reconocimiento = new SpeechRecognition();
+    reconocimiento.lang = 'es-ES';
+    reconocimiento.continuous = true;
+    reconocimiento.interimResults = true;
+
+    const btn = document.getElementById('btn-mic');
+    const status = document.getElementById('voz-status');
+    const textarea = document.getElementById('descripcion');
+    let textoBase = textarea.value;
+
+    reconocimiento.onstart = () => {
+      grabando = true;
+      btn.classList.add('grabando');
+      status.classList.remove('hidden');
+    };
+
+    reconocimiento.onresult = (e) => {
+      let interino = '';
+      let final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interino += e.results[i][0].transcript;
+      }
+      if (final) textoBase += (textoBase ? ' ' : '') + final;
+      textarea.value = textoBase + (interino ? ' ' + interino : '');
+    };
+
+    reconocimiento.onerror = (e) => {
+      if (e.error !== 'no-speech') alert('Error de micrófono: ' + e.error);
+      pararVoz();
+    };
+
+    reconocimiento.onend = () => pararVoz();
+
+    reconocimiento.start();
+  }
+
+  function pararVoz() {
+    grabando = false;
+    const btn = document.getElementById('btn-mic');
+    const status = document.getElementById('voz-status');
+    btn.classList.remove('grabando');
+    status.classList.add('hidden');
+  }
+
+  // ══════════════════════════════════════════
+  // CÁMARA — FOTO DE INCIDENCIA
+  // ══════════════════════════════════════════
+  let fotoBase64 = null;
+
+  window.abrirCamara = function() {
+    document.getElementById('input-camara').click();
+  }
+
+  window.mostrarFoto = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      fotoBase64 = ev.target.result;
+      document.getElementById('foto-placeholder').classList.add('hidden');
+      const preview = document.getElementById('foto-preview');
+      preview.src = fotoBase64;
+      preview.classList.remove('hidden');
+      document.getElementById('btn-borrar-foto').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  window.borrarFoto = function(e) {
+    e.stopPropagation();
+    fotoBase64 = null;
+    document.getElementById('foto-preview').classList.add('hidden');
+    document.getElementById('btn-borrar-foto').classList.add('hidden');
+    document.getElementById('foto-placeholder').classList.remove('hidden');
+    document.getElementById('input-camara').value = '';
   }
 
   // Service Worker para PWA

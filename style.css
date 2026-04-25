@@ -347,3 +347,92 @@ header {
   vertical-align: middle;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════
+   MICRÓFONO Y VOZ
+══════════════════════════════════════ */
+.textarea-wrapper {
+  position: relative;
+}
+.textarea-wrapper textarea {
+  padding-right: 48px;
+  min-height: 96px;
+}
+.btn-mic {
+  position: absolute;
+  bottom: 10px; right: 10px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: #EEF2FB;
+  border: 1px solid #C5D3EE;
+  color: var(--azul);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0;
+  transition: background 0.2s;
+}
+.btn-mic.grabando {
+  background: #E24B4A;
+  border-color: #E24B4A;
+  color: white;
+  animation: pulso 1s ease-in-out infinite;
+}
+@keyframes pulso {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+.voz-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: #E24B4A;
+  margin-top: 6px; font-weight: 500;
+}
+.voz-dot {
+  width: 8px; height: 8px;
+  background: #E24B4A; border-radius: 50%;
+  animation: parpadeo 0.8s ease-in-out infinite;
+}
+@keyframes parpadeo {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* ══════════════════════════════════════
+   CÁMARA Y FOTO
+══════════════════════════════════════ */
+.foto-area {
+  border: 2px dashed #C5D3EE;
+  border-radius: var(--radio);
+  min-height: 130px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; position: relative;
+  overflow: hidden; background: #F8FAFD;
+  transition: border-color 0.2s;
+}
+.foto-area:active { border-color: var(--azul); }
+#foto-placeholder {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  color: var(--azul);
+}
+#foto-placeholder span {
+  font-size: 13px; font-weight: 500; color: var(--azul);
+}
+#foto-preview {
+  width: 100%; max-height: 220px;
+  object-fit: cover; border-radius: var(--radio);
+}
+.btn-borrar-foto {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0,0,0,0.55); color: white;
+  border: none; border-radius: 20px;
+  font-size: 11px; padding: 4px 10px;
+  cursor: pointer;
+}
+
+/* Thumbnail en queja card del panel */
+.queja-foto {
+  width: 100%; max-height: 160px;
+  object-fit: cover;
+  border-radius: var(--radio-sm);
+  margin-top: 8px;
+}
