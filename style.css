@@ -436,3 +436,16 @@ header {
   border-radius: var(--radio-sm);
   margin-top: 8px;
 }
+
+/* Badge Anónimo */
+.badge-anonimo {
+  display: inline-block;
+  font-size: 11px; font-weight: 500;
+  background: #FEE2E2;
+  color: #E24B4A;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.badge-anonimo strong { color: #C0392B; }

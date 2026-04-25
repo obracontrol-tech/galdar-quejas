@@ -48,10 +48,10 @@
   <div id="panel-vecino" class="panel active">
     <div id="formulario">
       <div class="campo">
-        <label>Tu nombre (opcional) — <span style="color:#E24B4A">se mostrará como Anónimo si lo dejas vacío</span></label>
-        <div class="textarea-wrapper" style="display:flex;align-items:center;">
-          <input type="text" id="nombre" placeholder="Ej. María González" style="padding-right:48px">
-          <button class="btn-mic" id="btn-mic-nombre" onclick="toggleVozCampo('nombre','btn-mic-nombre','voz-status-nombre')" title="Dictar nombre" style="position:absolute;right:10px;top:50%;transform:translateY(-50%)">
+        <label>Tu nombre (opcional) &nbsp;<span class="badge-anonimo">Si lo dejas vacío aparecerá como <strong>Anónimo</strong></span></label>
+        <div class="textarea-wrapper">
+          <input type="text" id="nombre" placeholder="Ej. María González" style="padding-right:48px" oninput="capitalizarCampo(this)">
+          <button class="btn-mic" id="btn-mic-nombre" onclick="toggleVozCampo('nombre','btn-mic-nombre','voz-status-nombre')" title="Dictar nombre">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -93,7 +93,7 @@
       <div class="campo">
         <label>Describe el problema *</label>
         <div class="textarea-wrapper">
-          <textarea id="descripcion" placeholder="Cuéntanos qué está pasando... o usa el micrófono"></textarea>
+          <textarea id="descripcion" placeholder="Cuéntanos qué está pasando... o usa el micrófono" oninput="capitalizarCampo(this)"></textarea>
           <button class="btn-mic" id="btn-mic" onclick="toggleVoz()" title="Dictar por voz">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
@@ -545,56 +545,54 @@ Responde SOLO con este JSON exacto, sin texto adicional:
       return;
     }
     if (grabando) {
-      reconocimiento.stop();
+      grabando = false;
+      if (reconocimiento) reconocimiento.abort();
+      pararVoz();
       return;
     }
-    reconocimiento = new SpeechRecognition();
-    reconocimiento.lang = 'es-ES';
-    reconocimiento.continuous = true;
-    reconocimiento.interimResults = true;
-    reconocimiento.maxAlternatives = 1;
-
+    grabando = true;
     const btn = document.getElementById('btn-mic');
     const status = document.getElementById('voz-status');
     const textarea = document.getElementById('descripcion');
-    let textoBase = textarea.value;
+    btn.classList.add('grabando');
+    status.classList.remove('hidden');
 
-    reconocimiento.onstart = () => {
-      grabando = true;
-      btn.classList.add('grabando');
-      status.classList.remove('hidden');
-    };
-
-    let ultimoFinal = '';
-    reconocimiento.onresult = (e) => {
-      let interino = '';
-      let nuevasFrases = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          let frase = e.results[i][0].transcript.trim();
-          frase = frase.charAt(0).toUpperCase() + frase.slice(1);
-          if (frase !== ultimoFinal) {
-            nuevasFrases += (nuevasFrases ? ' ' : '') + frase;
-            ultimoFinal = frase;
-          }
-        } else {
-          let interim = e.results[i][0].transcript.trim();
-          interim = interim.charAt(0).toUpperCase() + interim.slice(1);
-          interino += interim;
+    function escucharUnaVez() {
+      if (!grabando) return;
+      const r = new SpeechRecognition();
+      reconocimiento = r;
+      r.lang = 'es-ES';
+      r.continuous = false;
+      r.interimResults = false;
+      r.maxAlternatives = 1;
+      r.onresult = (e) => {
+        if (e.results.length > 0) {
+          let frase = e.results[0][0].transcript.trim();
+          frase = capitalizarTexto(frase);
+          const actual = textarea.value.trim();
+          textarea.value = actual ? actual + ' ' + frase : frase;
         }
-      }
-      if (nuevasFrases) textoBase += (textoBase ? ' ' : '') + nuevasFrases;
-      textarea.value = textoBase + (interino ? ' ' + interino : '');
-    };
+      };
+      r.onerror = (e) => {
+        if (e.error === 'no-speech') { if (grabando) escucharUnaVez(); }
+        else { grabando = false; pararVoz(); }
+      };
+      r.onend = () => { if (grabando) escucharUnaVez(); };
+      r.start();
+    }
+    escucharUnaVez();
+  }
 
-    reconocimiento.onerror = (e) => {
-      if (e.error !== 'no-speech') alert('Error de micrófono: ' + e.error);
-      pararVoz();
-    };
+  function capitalizarTexto(texto) {
+    return texto.replace(/(^|[.!?]\s+)([a-záéíóúüñ])/gi, (m, p1, p2) => p1 + p2.toUpperCase());
+  }
 
-    reconocimiento.onend = () => pararVoz();
-
-    reconocimiento.start();
+  window.capitalizarCampo = function(el) {
+    const pos = el.selectionStart;
+    const val = el.value;
+    if (val.length === 0) return;
+    const nuevo = val.charAt(0).toUpperCase() + val.slice(1);
+    if (nuevo !== val) { el.value = nuevo; el.setSelectionRange(pos, pos); }
   }
 
   function pararVoz() {
