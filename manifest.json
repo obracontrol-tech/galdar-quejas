@@ -1,8 +1,8 @@
 {
   "name": "Quejas Vecinales Gáldar",
   "short_name": "Quejas Gáldar",
-  "description": "App de quejas vecinales — José Blas Díaz Bolaños, Unidos por Gran Canaria",
-  "start_url": "/galdar-quejas/",
+  "description": "Envía tu queja vecinal a José Blas Díaz Bolaños",
+  "start_url": "/galdar-vecinos/",
   "display": "standalone",
   "background_color": "#1A3A6B",
   "theme_color": "#1A3A6B",
