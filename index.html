@@ -340,7 +340,7 @@
       if (sondeoSeleccionado) docData.sondeo = sondeoSeleccionado;
       await addDoc(collection(db, "quejas"), docData);
 
-      // Notificación Telegram a José Blas
+      // Notificación Telegram a José Blas via proxy CORS
       try {
         const nombre = docData.nombre || 'Anónimo';
         const msg = encodeURIComponent(
@@ -351,7 +351,9 @@
         );
         const TOKEN = '7772396231:AAFaK7kc2Zmwq3i-L8MB6ZD-1obFDqhr450';
         const CHAT_ID = '8601457137';
-        await fetch('https://api.telegram.org/bot' + TOKEN + '/sendMessage?chat_id=' + CHAT_ID + '&text=' + msg);
+        const telegramURL = 'https://api.telegram.org/bot' + TOKEN + '/sendMessage?chat_id=' + CHAT_ID + '&text=' + msg;
+        const proxyURL = 'https://corsproxy.io/?' + encodeURIComponent(telegramURL);
+        await fetch(proxyURL);
       } catch(e) { console.log('Notificación no enviada:', e); }
       document.getElementById('formulario').classList.add('hidden');
       document.getElementById('enviada-ok').classList.remove('hidden');
