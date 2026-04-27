@@ -339,6 +339,18 @@
       if (fotoBase64) docData.foto = fotoBase64;
       if (sondeoSeleccionado) docData.sondeo = sondeoSeleccionado;
       await addDoc(collection(db, "quejas"), docData);
+
+      // Notificación Telegram a José Blas via CallMeBot
+      try {
+        const nombre = docData.nombre || 'Anónimo';
+        const msg = encodeURIComponent(
+          '🔔 Nueva queja en Gáldar\n' +
+          '📍 ' + barrio + ' · ' + cat + '\n' +
+          '👤 ' + nombre + '\n' +
+          '💬 ' + desc.substring(0, 100) + (desc.length > 100 ? '...' : '')
+        );
+        await fetch('https://api.callmebot.com/text.php?user=@joseblasGaldar&text=' + msg + '&apikey=59416');
+      } catch(e) { console.log('Notificación no enviada:', e); }
       document.getElementById('formulario').classList.add('hidden');
       document.getElementById('enviada-ok').classList.remove('hidden');
     } catch(e) {
