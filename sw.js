@@ -1,4 +1,4 @@
-const CACHE = 'galdar-vecinos-v5';
+const CACHE = 'galdar-concejal-v5';
 const ASSETS = ['./', './index.html', './style.css', './manifest.json', './logo.png'];
 
 self.addEventListener('install', e => {
