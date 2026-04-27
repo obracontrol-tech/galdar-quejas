@@ -340,7 +340,7 @@
       if (sondeoSeleccionado) docData.sondeo = sondeoSeleccionado;
       await addDoc(collection(db, "quejas"), docData);
 
-      // Notificación Telegram a José Blas via CallMeBot
+      // Notificación Telegram a José Blas
       try {
         const nombre = docData.nombre || 'Anónimo';
         const msg = encodeURIComponent(
@@ -349,7 +349,9 @@
           '👤 ' + nombre + '\n' +
           '💬 ' + desc.substring(0, 100) + (desc.length > 100 ? '...' : '')
         );
-        await fetch('https://api.callmebot.com/text.php?user=@joseblasGaldar&text=' + msg + '&apikey=59416');
+        const TOKEN = '7772396231:AAFaK7kc2Zmwq3i-L8MB6ZD-1obFDqhr450';
+        const CHAT_ID = '8601457137';
+        await fetch('https://api.telegram.org/bot' + TOKEN + '/sendMessage?chat_id=' + CHAT_ID + '&text=' + msg);
       } catch(e) { console.log('Notificación no enviada:', e); }
       document.getElementById('formulario').classList.add('hidden');
       document.getElementById('enviada-ok').classList.remove('hidden');
