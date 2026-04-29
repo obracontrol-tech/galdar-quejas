@@ -226,7 +226,8 @@ setTimeout(() => {
 
 // Telegram
 async function tg(emoji, tipo, barrio, nombre, texto) {
-  const msg = emoji+' '+tipo+' en Galdar\n📍 '+barrio+'\n👤 '+nombre+'\n💬 '+texto.substring(0,120);
+  const nl = String.fromCharCode(10);
+  const msg = emoji+' '+tipo+' en Galdar'+nl+'📍 '+barrio+nl+'👤 '+nombre+nl+'💬 '+texto.substring(0,120);
   for (const chat_id of [TG_CHAT, TG_CHAT_BLAS]) {
     try {
       await fetch(WORKER, {method:'POST', headers:{'Content-Type':'application/json'},
